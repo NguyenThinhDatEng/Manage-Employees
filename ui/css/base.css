@@ -1,0 +1,37 @@
+@import url(font.css);
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    /* avoid overflow */
+}
+
+label {
+    font-size: 16px;
+    color: black;
+    font-weight: bold;
+    padding-bottom: 4px;
+}
+
+b {
+    padding: 0 4px;
+}
+
+@media screen and (max-width: 900px) {
+    .home-menu {
+        display: none;
+    }
+
+    .home-content {
+        grid-column: 1 / span 16;
+    }
+
+    .content-filter {
+        flex-direction: column;
+    }
+}
+

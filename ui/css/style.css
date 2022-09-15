@@ -1,0 +1,283 @@
+@import url(elements/text.css);
+@import url(elements/button.css);
+@import url(elements/input.css);
+@import url(elements/icon.css);
+@import url(elements/combobox.css);
+@import url(elements/toast.css);
+@import url(elements/table.css);
+@import url(elements/dialog.css);
+@import url(elements/pop-up.css);
+@import url(base.css);
+
+.row {
+    display: flex;
+    position: relative;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.row-selected { 
+    background-color: rgb(240, 236, 236);
+}
+
+.contents {
+    display: flex;
+    padding-left: 24px;
+    width: 100%;
+}
+
+.avatar {
+    display: flex;
+    flex-direction: column;
+    width: 35%;
+}
+
+.avatar p {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: lighter;
+    width: 100%;
+    padding: 0 2px;
+    text-align: center;
+}
+
+.contents .pop-up__content {
+    position: relative;
+    width: 100%;
+}
+
+.input-box {
+    display: flex;
+    justify-content: space-between;
+}
+
+.box-left {
+    display: flex;
+    flex-direction: column;
+    width: 49%;
+}
+
+.box-right {
+    display: flex;
+    flex-direction: column;
+    width: 49%;
+}
+
+.box-right .salary {
+    flex-basis: 40px;
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: 48px calc(100vh - 48px);
+}
+
+.home-logo {
+    grid-column: 1/ span 2;
+    display: flex;
+    align-items: center;
+    border-right: 1px solid #bbb;
+}
+
+.restaurant-name {
+    display: flex;
+    align-items: center;
+    grid-column: 3/ span 11;
+    padding-left: 24px;
+    border-bottom: 1px solid #bbb;
+}
+
+.home-user {
+    grid-column: 14/ span 3;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-bottom: 1px solid #bbb;
+    padding-right: 12px;
+}
+
+.home-menu {
+    grid-column: 1/ span 2;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #bbb;
+    padding-left: 16px;
+}
+
+.menu-content {
+    display: flex;
+    align-items: center;
+    height: 40px;
+}
+
+.menu-content:hover {
+    background-color: rgb(240, 236, 236);
+    cursor: pointer;
+}
+
+.menu-header {
+    height: 48px;
+}
+
+.home-content {
+    grid-column: 3/ span 14;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 0 12px 0 12px;
+}
+
+.content-header {
+    display: block;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title-creation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.content-feature {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.content-filter {
+    display: flex;
+    position: relative;
+}
+
+.other-features {
+    display: flex;
+}
+
+.feature {
+    border: 1px solid #bbb;
+    height: 40px;
+    width: 40px;
+}
+
+.feature:hover {
+    background-color: #bbb;
+}
+
+.feature:active {
+    background-color: rgb(219, 218, 218);
+}
+
+
+.feature~.feature {
+    margin-left: 4px;
+}
+
+.table-content {
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    flex: 1;
+    overflow: auto;
+}
+
+.table-header {
+    font-weight: bold;
+    margin-top: 16px;
+    font-size: 16px;
+    height: 48px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.table-info {
+    border-top: 1px solid #bbb;
+}
+
+.table-info .row {
+    align-items: center;
+    padding: 8px 0 8px 0;
+    border-bottom: 1px solid #bbb;
+    height: 48px;
+}
+
+.employeeCode {
+    flex-basis: 120px;
+}
+
+.dateOfBirth,
+.phoneNumber {
+    flex-basis: 130px;
+}
+
+.fullName,
+.salary {
+    flex-basis: 160px;
+}
+
+.salary {
+    text-align: right;
+}
+
+.gender {
+    width: 130px;
+}
+
+.email {
+    flex-basis: 300px;
+}
+
+.positionName {
+    flex-basis: 180px;
+}
+
+.departmentName {
+    flex-basis: 150px;
+}
+
+.workStatus {
+    padding-left: 16px;
+    justify-content: flex-end;
+    flex: auto;
+    text-align: center;
+}
+
+.table-footer {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.footer-left {
+    display: flex;
+    width: 35%;
+}
+
+.footer-center {
+    justify-content: space-around;
+    width: 30%;
+}
+
+.footer-right {
+    width: 35%;
+    text-align: end;
+}
+
+.page-number--selected {
+    background-color: #019460;
+    color: #fff;
+}
+
+.footer-left,
+.footer-center,
+.footer-right {
+    align-items: center;
+}
+
+#signUp {
+    width: 25%;    
+}
