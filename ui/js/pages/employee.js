@@ -7,6 +7,8 @@ $(document).ready(function () {
 
 var act = null;
 var employeeSelected = null;
+var dir = "http://localhost:9074/";
+var totalCount = 0;
 
 /**
  * Lay du lieu tu API
@@ -14,118 +16,14 @@ var employeeSelected = null;
  */
 // Tải dữ liệu
 function loadData() {
-  // Goi API lay tat ca nhan vien
-  try {
-    $.ajax({
-      type: "GET",
-      async: false,
-      url: "http://localhost:9074/api/v1/Employees/",
-      success: function (employees) {
-        console.log("Loading...");
-        // Xu ly du lieu
-        let cols = $(".table-header div");
-        for (const employee of employees) {
-          let rowOfTable = $('<div class="row"></div>');
-          for (const col of cols) {
-            // Lay ra propValue tương ứng với các cột:
-            const propValue = $(col).attr("propValue");
-            // Lay ra format tương ứng với các cột
-            const format = $(col).attr("format");
-            // Lay thong tin
-            let value = employee[propValue];
-            // Dinh dang (Ngay sinh, Gioi tinh, Muc luong co ban)
-            if (value) {
-              switch (format) {
-                // Chuyen doi tu so ve chuoi cho gender va workStatus
-                case "gender": {
-                  value = value.toString();
-                  const options = $("#gender option");
-                  for (const opt of options) {
-                    const optValue = $(opt).attr("value");
-                    if (optValue == value) {
-                      value = $(opt).attr("label");
-                      break;
-                    }
-                  }
-                  break;
-                }
-                case "workStatus": {
-                  value = value.toString();
-                  const options = $("#workStatus option");
-                  for (const opt of options) {
-                    const optValue = $(opt).attr("value");
-                    if (optValue == value) {
-                      value = $(opt).attr("label");
-                      break;
-                    }
-                  }
-                  break;
-                }
-                case "date":
-                  value = formatDate(value);
-                  break;
-                case "money":
-                  value = Math.round(value);
-                  value = formatMoney(value);
-                  break;
-                default:
-                  break;
-              }
-            }
-            // Tạo rowHTML:
-            const thHTML = `<div class='${propValue}'>${value || ""}</div>`;
-            rowOfTable.append(thHTML);
-          }
-          $(rowOfTable).data("entity", employee); // init data() of row
-          $(".table-info").append(rowOfTable);
-        }
-      },
-    });
-  } catch (error) {
-    errorMessage("Có lỗi xảy ra", error);
-  }
+  // Goi API loc du lieu hien thi
+  filterData();
   // Goi API lay tat ca Vi tri
-  try {
-    $.ajax({
-      type: "GET",
-      // async: false,
-      url: "http://localhost:9074/api/v1/Positions/",
-      success: function (positions) {
-        console.log("Loading positions data ...");
-        // Lay thong tin vi tri
-        let select = $("select#position");
-        let option = null;
-        for (const position of positions) {
-          option = $("<option></option>");
-          option.append(position.positionName);
-          select.append(option);
-        }
-      },
-    });
-  } catch (error) {
-    errorMessage("Có lỗi xảy ra", error);
-  }
+  getAllDepartments();
   // Goi API lay tat ca Phong ban
-  try {
-    $.ajax({
-      type: "GET",
-      // async: false,
-      url: "http://localhost:9074/api/v1/Departments/",
-      success: function (departments) {
-        console.log("Loading departments data ...");
-        // Lay thong tin vi tri
-        let select = $(`select#department`);
-        let option = null;
-        for (const department of departments) {
-          option = $("<option></option>");
-          option.append(department.departmentName);
-          select.append(option);
-        }
-      },
-    });
-  } catch (error) {
-    errorMessage("Có lỗi xảy ra", error);
-  }
+  getAllPositions();
+  // Hiển thị số lượng bản ghi
+  $(".footer-left b").append("01-10/" + totalCount);
 }
 
 /**
@@ -135,6 +33,32 @@ function loadData() {
  */
 
 function initEvent() {
+  /**
+   * MENU
+   */
+  // click vao menu items
+  $(".menu-content").click(function () {
+    $(this).siblings().removeClass("menu-content--selected");
+    $(this).addClass("menu-content--selected");
+    title = $(this).attr("title") + ".html";
+    // Change pages
+    window.location.href = title;
+  });
+  /**
+   * Content
+   */
+  // Loc nhan vien
+  $(".input-search").keyup(filterData);
+  $("select#department.select").change(filterData);
+  $("select#position.select").change(filterData);
+  $("#pageSize").change(function () {
+    const value = $("#pageSize").val();
+    let selector = $(".footer-left b");
+    selector.empty();
+    selector.append("01-" + value + "/" + totalCount);
+    filterData();
+  });
+
   // click nut them moi nhan vien
   $(".icon-add").click(function () {
     act = "create";
@@ -170,10 +94,14 @@ function initEvent() {
     $("input[number]").keydown(function () {
       // Thêm tiêu đề cho input
       $(this).attr("title", "Chỉ được nhập số");
-      debugger;
       // Chỉ được nhập ký tự số
       const keyCode = event.keyCode;
-      if ((keyCode >= 48 && keyCode <= 57) || keyCode == 8) return true;
+      if (
+        (keyCode >= 48 && keyCode <= 57) ||
+        keyCode == 8 ||
+        (keyCode >= 37 && keyCode <= 40)
+      )
+        return true;
       else return false;
     });
 
@@ -262,29 +190,219 @@ function initEvent() {
   });
 }
 
-// Gioi han ngay nhap
-function limitDate() {
-  let today = new Date();
-  let dd = today.getDate();
-  let mm = today.getMonth() + 1; //January is 0!
-  let yyyy = today.getFullYear();
-
-  if (dd < 10) {
-    dd = "0" + dd;
-  }
-
-  if (mm < 10) {
-    mm = "0" + mm;
-  }
-
-  today = yyyy + "-" + mm + "-" + dd;
-  return today;
-}
-
-/**
+/**go
  * Hàm thực thi
- * Comment: Thực hiện tính năng
+ * Comment: Thực hiện tính năng (Gọi API)
  */
+// Lọc dữ liệu
+async function filterData() {
+  let queryParams = "";
+  const keyword = $(".icon-search").val();
+  const departmentID = $("select#department.select").val();
+  const positionID = $("select#position.select").val();
+  const pageSize = $("#pageSize").val();
+  queryParams +=
+    "keyword=" +
+    keyword +
+    "&departmentID=" +
+    departmentID +
+    "&positionID=" +
+    positionID +
+    "&pageSize=" +
+    pageSize;
+  try {
+    await $.ajax({
+      type: "GET",
+      async: false,
+      url: dir + "api/v1/Employees/filter?" + queryParams,
+      success: function (employees) {
+        console.log("Filtering Data ...");
+        // Làm sạch table
+        $(".table-info").empty();
+        // Xu ly du lieu
+        totalCount = employees.totalCount;
+        let cols = $(".table-header div");
+        for (const employee of employees.data) {
+          let rowOfTable = $('<div class="row"></div>');
+          for (const col of cols) {
+            // Lay ra propValue tương ứng với các cột:
+            const propValue = $(col).attr("propValue");
+            // Lay ra format tương ứng với các cột
+            const format = $(col).attr("format");
+            // Lay thong tin
+            let value = employee[propValue];
+            // Dinh dang (Ngay sinh, Gioi tinh, Muc luong co ban)
+            if (value) {
+              switch (format) {
+                // Chuyen doi tu so ve chuoi cho gender va workStatus
+                case "gender": {
+                  value = value.toString();
+                  const options = $("#gender option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "workStatus": {
+                  value = value.toString();
+                  const options = $("#workStatus option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "date":
+                  value = formatDate(value);
+                  break;
+                case "money":
+                  value = Math.round(value);
+                  value = formatMoney(value);
+                  break;
+                default:
+                  break;
+              }
+            }
+            // Tạo rowHTML:
+            const thHTML = `<div class='${propValue}'>${value || ""}</div>`;
+            rowOfTable.append(thHTML);
+          }
+          $(rowOfTable).data("entity", employee); // init data() of row
+          $(".table-info").append(rowOfTable);
+        }
+      },
+    });
+  } catch (error) {
+    console.log("filterData\n", error);
+  }
+}
+// Lấy tất cả nhân viên
+function getAllEmployees() {
+  try {
+    $.ajax({
+      type: "GET",
+      async: false,
+      url: dir + "api/v1/Employees/",
+      success: function (employees) {
+        console.log("Loading...");
+        // Xu ly du lieu
+        let cols = $(".table-header div");
+        for (const employee of employees) {
+          let rowOfTable = $('<div class="row"></div>');
+          for (const col of cols) {
+            // Lay ra propValue tương ứng với các cột:
+            const propValue = $(col).attr("propValue");
+            // Lay ra format tương ứng với các cột
+            const format = $(col).attr("format");
+            // Lay thong tin
+            let value = employee[propValue];
+            // Dinh dang (Ngay sinh, Gioi tinh, Muc luong co ban)
+            if (value) {
+              switch (format) {
+                // Chuyen doi tu so ve chuoi cho gender va workStatus
+                case "gender": {
+                  value = value.toString();
+                  const options = $("#gender option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "workStatus": {
+                  value = value.toString();
+                  const options = $("#workStatus option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "date":
+                  value = formatDate(value);
+                  break;
+                case "money":
+                  value = Math.round(value);
+                  value = formatMoney(value);
+                  break;
+                default:
+                  break;
+              }
+            }
+            // Tạo rowHTML:
+            const thHTML = `<div class='${propValue}'>${value || ""}</div>`;
+            rowOfTable.append(thHTML);
+          }
+          $(rowOfTable).data("entity", employee); // init data() of row
+          $(".table-info").append(rowOfTable);
+        }
+      },
+    });
+  } catch (error) {
+    errorMessage("Có lỗi xảy ra", error);
+  }
+}
+// Lấy tất cả phòng ban
+async function getAllDepartments() {
+  try {
+    await $.ajax({
+      type: "GET",
+      // async: false,
+      url: "http://localhost:9074/api/v1/Positions/",
+      success: function (positions) {
+        console.log("Loading positions data ...");
+        // Lay thong tin vi tri
+        let select = $("select#position");
+        let option = null;
+        for (const position of positions) {
+          option = $("<option></option>");
+          option.attr("value", position.positionID);
+          option.append(position.positionName);
+          select.append(option);
+        }
+      },
+    });
+  } catch (error) {
+    errorMessage("Có lỗi xảy ra", error);
+  }
+}
+// Lây tất cả vị trí
+async function getAllPositions() {
+  try {
+    $.ajax({
+      type: "GET",
+      // async: false,
+      url: "http://localhost:9074/api/v1/Departments/",
+      success: function (departments) {
+        console.log("Loading departments data ...");
+        // Lay thong tin vi tri
+        let select = $(`select#department`);
+        let option = null;
+        for (const department of departments) {
+          option = $("<option></option>");
+          option.attr("value", department.departmentID);
+          option.append(department.departmentName);
+          select.append(option);
+        }
+      },
+    });
+  } catch (error) {
+    errorMessage("Có lỗi xảy ra", error);
+  }
+}
 // Luu nhan vien vao database
 function saveData() {
   // Khoi tao du lieu ban dau
@@ -304,14 +422,14 @@ function saveData() {
   employee["modifiedBy"] = "";
   if (employee.dateOfBirth == "") delete employee.dateOfBirth;
   if (employee.identityIssuedDate == "") delete employee.identityIssuedDate;
-  if (employee.gender == "" || employee.gender == 3) delete employee.gender;
+  if (employee.gender == "") delete employee.gender;
   if (employee.workStatus == "") delete employee.workStatus;
   if (employee.salary == "") delete employee.salary;
 
+  if (!checkMandatoryInput(employee)) return;
   employee = JSON.stringify(employee);
   // Goi API
   if (act == "create") {
-    if (!checkMandatoryInput(employee)) return;
     try {
       $.ajax({
         type: "POST",
@@ -347,7 +465,6 @@ function saveData() {
   $(this).parents(".pop-up__background").hide();
   loadData();
 }
-
 // Tính năng Nhân bản
 function duplicateData() {
   act = "create";
@@ -362,7 +479,6 @@ function duplicateData() {
   }
   deleteData();
 }
-
 // Xoa nhan vien khoi database
 function deleteData() {
   // Goi API DELETE
@@ -455,6 +571,8 @@ function checkMandatoryInput(employee) {
     !employee.email ||
     !employee.phoneNumber
   ) {
+    console.log(employee);
+    debugger;
     errorMessage("Điền thiếu thông tin bắt buộc");
     const inputs = $("input[mandatory]");
     for (const input of inputs) {
@@ -478,6 +596,25 @@ function checkFullName(fullName) {
     return false;
   }
   return true;
+}
+
+// Gioi han ngay nhap
+function limitDate() {
+  let today = new Date();
+  let dd = today.getDate();
+  let mm = today.getMonth() + 1; //January is 0!
+  let yyyy = today.getFullYear();
+
+  if (dd < 10) {
+    dd = "0" + dd;
+  }
+
+  if (mm < 10) {
+    mm = "0" + mm;
+  }
+
+  today = yyyy + "-" + mm + "-" + dd;
+  return today;
 }
 
 // Validate
