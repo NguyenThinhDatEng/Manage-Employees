@@ -10,6 +10,7 @@ var employeeSelected = null;
 var dir = "http://localhost:9074/";
 var allDepartments = null;
 var allPositions = null;
+var toastList = $(".toast-list");
 
 /**
  * Lay du lieu tu API
@@ -39,7 +40,6 @@ function initEvent() {
   $(".menu-content").click(function () {
     $(this).siblings().removeClass("menu-content--selected");
     $(this).addClass("menu-content--selected");
-    d;
     title = $(this).attr("title") + ".html";
     // Change pages
     window.location.href = title;
@@ -48,10 +48,10 @@ function initEvent() {
    * Events in Content
    */
   // Loc nhan vien
-  $(".input-search").keyup(filterData);
-  $("select#department.select").change(filterData);
-  $("select#position.select").change(filterData);
-  $("#pageSize").change(filterData);
+  $(".input-search").keyup(refreshPagination);
+  $("select#department.select").change(refreshPagination);
+  $("select#position.select").change(refreshPagination);
+  $("#pageSize").change(refreshPagination);
   $(".page-number").click(filterData);
 
   /**
@@ -128,12 +128,7 @@ function initEvent() {
     $("select#department.select").val("");
     $("select#position.select").val("");
     $("#pageSize").val(10);
-    $(".page-number .footer-button")
-      .siblings()
-      .removeClass("page-number--selected");
-    $(".page-number .footer-button:first-child").addClass(
-      "page-number--selected"
-    );
+    refreshPagination();
     filterData();
   });
 
@@ -161,7 +156,7 @@ function initEvent() {
 
   // double click vao 1 dong trong bang
   $(document).on("dblclick", ".table-info .row", function () {
-    act = "modify";
+    act = "update";
     $("#newEmployee").show();
     $("#employeeCode").focus();
     // Dữ liệu nhân viên tự động điền vào các ô input tương ứng.
@@ -375,7 +370,7 @@ async function filterData() {
         const value = pageSize < totalCount ? pageSize : totalCount;
         // Tính chỉ số bắt đầu và chỉ số kết thúc
         let lastIndex = value * pageNumber;
-        let firstIndex = lastIndex - pageSize + 1;
+        let firstIndex = lastIndex - value + 1;
         // Hiển thị số liệu left-footer
         let selector = $(".footer-left b");
         selector.empty();
@@ -500,7 +495,7 @@ function saveData() {
     } catch (error) {
       errorMessage("Có lỗi xảy ra", error);
     }
-  } else if (act == "edit") {
+  } else if (act == "update") {
     try {
       $.ajax({
         type: "PUT",
@@ -608,22 +603,24 @@ function formatMoney(salary) {
 
 function successMessage(content) {
   // tien xu ly
-  const element = $("#toastOK");
-  element.show();
-  element.find(".toast__content").empty();
+  const toastOK = $("#toastOK");
+  toastOK.find(".toast__content").empty();
   // Them noi dung
-  element.find(".toast__content").append(content);
+  toastOK.find(".toast__content").append(content);
+  toastList.append(toastOK);
+  toastList.show();
   // in ra console
   console.log(content + "!");
 }
 
 function errorMessage(content, error) {
   // tien xu ly
-  const element = $("#toastERR");
-  element.show();
-  element.find(".toast__content").empty();
+  const toastERR = $("#toastERR");
+  toastERR.find(".toast__content").empty();
   // Them noi dung
-  element.find(".toast__content").append(content);
+  toastERR.find(".toast__content").append(content);
+  toastList.append(toastERR);
+  toastList.show();
   // in ra console
   if (error) console.log(error);
 }
@@ -721,4 +718,15 @@ function getPositionID(positionName) {
     if (position.positionName == positionName) return position.positionID;
   }
   console.log("Không tìm thấy PositionName");
+}
+
+// Làm mới phân trang
+function refreshPagination() {
+  $(".page-number .footer-button")
+    .siblings()
+    .removeClass("page-number--selected");
+  $(".page-number .footer-button:first-child").addClass(
+    "page-number--selected"
+  );
+  filterData();
 }

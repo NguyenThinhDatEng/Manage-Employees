@@ -163,7 +163,7 @@
                         <div class="box-right">
                             <label for="gender">Giới tính</label>
                             <Select id="gender" propValue="gender" class="input-select">
-                                <option value="0" label="Không xác định"></option>
+                                <option value="0" label="Khác"></option>
                                 <option value="1" label="Nam"></option>
                                 <option value="2" label="Nữ"></option>
                             </Select>
@@ -261,17 +261,18 @@
         </div>
     </div>
     <!-- toast list -->
-    <div class="toast-list">
-        <div id="toastOK" class="toast" style="display: none">
-            <div class="icon toast__icon icon-checked"></div>
-            <div class="toast__content"></div>
-            <button id="toast__x" class="icon icon-x"></button>
-        </div>
-        <div id="toastERR" class="toast" style="display: none">
-            <div class="icon toast__icon icon-err"></div>
-            <div class="toast__content"></div>
-            <button id="toast__x" class="icon icon-x"></button>
-        </div>
+    <div class="toast-list"></div>
+    <!-- toast OK -->
+    <div id="toastOK" class="toast">
+        <div class="icon toast__icon icon-checked"></div>
+        <div class="toast__content"></div>
+        <button id="toast__x" class="icon icon-x"></button>
+    </div>
+    <!-- toast ERROR -->
+    <div id="toastERR" class="toast" style="display: none">
+        <div class="icon toast__icon icon-err"></div>
+        <div class="toast__content"></div>
+        <button id="toast__x" class="icon icon-x"></button>
     </div>
     <!-- javascript -->
     <script src="../js/jquery-3.6.1.min.js"></script>

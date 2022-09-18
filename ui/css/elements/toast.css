@@ -15,7 +15,7 @@
     background: #fff;
 }
 
-.toast+.toast {
+.toast~.toast {
     /* ~ all, + first behind*/
     margin-top: 10px;
 }
