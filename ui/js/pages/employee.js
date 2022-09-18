@@ -17,12 +17,12 @@ var allPositions = null;
  */
 // Tải dữ liệu
 function loadData() {
-  // Goi API loc du lieu hien thi
-  filterData();
   // Goi API lay tat ca Phong ban
   getAllDepartments();
   // Goi API lay tat ca Vi tri
   getAllPositions();
+  // Goi API loc du lieu hien thi
+  filterData();
 }
 
 /**
@@ -39,6 +39,7 @@ function initEvent() {
   $(".menu-content").click(function () {
     $(this).siblings().removeClass("menu-content--selected");
     $(this).addClass("menu-content--selected");
+    d;
     title = $(this).attr("title") + ".html";
     // Change pages
     window.location.href = title;
@@ -51,6 +52,7 @@ function initEvent() {
   $("select#department.select").change(filterData);
   $("select#position.select").change(filterData);
   $("#pageSize").change(filterData);
+  $(".page-number").click(filterData);
 
   /**
    *  Events in POP-UP
@@ -122,6 +124,16 @@ function initEvent() {
 
   // click vao nut lam moi
   $("#btnRefresh").click(function () {
+    $(".icon-search").val("");
+    $("select#department.select").val("");
+    $("select#position.select").val("");
+    $("#pageSize").val(10);
+    $(".page-number .footer-button")
+      .siblings()
+      .removeClass("page-number--selected");
+    $(".page-number .footer-button:first-child").addClass(
+      "page-number--selected"
+    );
     filterData();
   });
 
@@ -152,19 +164,18 @@ function initEvent() {
     act = "modify";
     $("#newEmployee").show();
     $("#employeeCode").focus();
-    // Dữ liệu nhân viên cần sửa sẽ tự động được điền vào các ô dữ liệu tương ứng.
-    const employee = $(this).data().entity;
-    const inputs = $("#newEmployee select, #newEmployee input");
+    // Dữ liệu nhân viên tự động điền vào các ô input tương ứng.
+    const inputs = $("#newEmployee input");
     for (const input of inputs) {
       const propValue = $(input).attr("propValue");
-      if (
-        propValue == "IdentityDate" ||
-        propValue == "JoinDate" ||
-        propValue == "DateOfBirth"
-      )
-        input.value = "2022-09-08";
-      else input.value = employee[propValue];
+      input.value = employeeSelected[propValue];
     }
+    // const selects = $("#newEmployee select");
+    // for (const select of selects) {
+    //   debugger;
+    //   const propValue = $(input).attr("propValue");
+    //   input.value = employeeSelected[propValue];
+    // }
   });
 
   // click nut x
@@ -188,7 +199,6 @@ function initEvent() {
   $(".page-number button").click(function () {
     $(this).siblings().removeClass("page-number--selected");
     $(this).addClass("page-number--selected");
-    employeeSelected = $(this).data().entity;
   });
 }
 
@@ -196,100 +206,6 @@ function initEvent() {
  * Hàm thực thi
  * Comment: Thực hiện tính năng (Gọi API)
  */
-// Lọc dữ liệu
-async function filterData() {
-  let queryParams = "";
-  const keyword = $(".icon-search").val();
-  const departmentID = $("select#department.select").val();
-  const positionID = $("select#position.select").val();
-  const pageSize = $("#pageSize").val();
-  queryParams +=
-    "keyword=" +
-    keyword +
-    "&departmentID=" +
-    departmentID +
-    "&positionID=" +
-    positionID +
-    "&pageSize=" +
-    pageSize;
-  try {
-    await $.ajax({
-      type: "GET",
-      async: false,
-      url: dir + "api/v1/Employees/filter?" + queryParams,
-      success: function (employees) {
-        console.log("Filtering Data ...");
-        // Hiển thị số lượng bản ghi
-        const totalCount = employees.totalCount;
-        const value = pageSize < totalCount ? pageSize : totalCount;
-        let selector = $(".footer-left b");
-        selector.empty();
-        selector.append("1-" + value + "/" + totalCount);
-        // Làm sạch table
-        $(".table-info").empty();
-        // Xu ly du lieu
-        let cols = $(".table-header div");
-        for (const employee of employees.data) {
-          let rowOfTable = $('<div class="row"></div>');
-          for (const col of cols) {
-            // Lay ra propValue tương ứng với các cột:
-            const propValue = $(col).attr("propValue");
-            // Lay ra format tương ứng với các cột
-            const format = $(col).attr("format");
-            // Lay thong tin
-            let value = employee[propValue];
-            // Dinh dang (Ngay sinh, Gioi tinh, Muc luong co ban)
-            if (value) {
-              switch (format) {
-                // Chuyen doi tu so ve chuoi cho gender va workStatus
-                case "gender": {
-                  value = value.toString();
-                  const options = $("#gender option");
-                  for (const opt of options) {
-                    const optValue = $(opt).attr("value");
-                    if (optValue == value) {
-                      value = $(opt).attr("label");
-                      break;
-                    }
-                  }
-                  break;
-                }
-                case "workStatus": {
-                  value = value.toString();
-                  const options = $("#workStatus option");
-                  for (const opt of options) {
-                    const optValue = $(opt).attr("value");
-                    if (optValue == value) {
-                      value = $(opt).attr("label");
-                      break;
-                    }
-                  }
-                  break;
-                }
-                case "date":
-                  value = formatDate(value);
-                  break;
-                case "money":
-                  value = Math.round(value);
-                  value = formatMoney(value);
-                  break;
-                default:
-                  break;
-              }
-            }
-            // Tạo rowHTML:
-            const thHTML = `<div class='${propValue}'>${value || ""}</div>`;
-            rowOfTable.append(thHTML);
-          }
-          $(rowOfTable).data("entity", employee); // init data() of row
-          $(".table-info").append(rowOfTable);
-        }
-      },
-    });
-  } catch (error) {
-    console.log("filterData\n", error);
-  }
-}
 // Lấy tất cả nhân viên
 function getAllEmployees() {
   try {
@@ -362,33 +278,32 @@ function getAllEmployees() {
     errorMessage("Có lỗi xảy ra", error);
   }
 }
-// Lấy tất cả phòng ban
-async function getAllPositions() {
+// Lây tất cả vị trí
+async function getAllDepartments() {
   try {
     await $.ajax({
       type: "GET",
-      // async: false,
-      url: dir + "api/v1/Positions/",
-      success: function (positions) {
-        console.log("Loading positions data ...");
-        // Lay thong tin vi tri
-        let filterPostion = $("select#position.select");
+      async: false,
+      url: dir + "api/v1/Departments/",
+      success: function (departments) {
+        console.log("Loading departments data ...");
+        allDepartments = departments;
+        // Ghép thông tin vào ô lọc Phòng ban
+        let selectDepartment = $("select#department.select");
         let option = null;
-        // Ghép thông tin vào ô lọc vị trí
-        for (const position of positions) {
+        for (const department of departments) {
           option = $("<option></option>");
-          option.attr("value", position.positionID);
-          option.append(position.positionName);
-          filterPostion.append(option);
+          option.attr("value", department.departmentID);
+          option.append(department.departmentName);
+          selectDepartment.append(option);
         }
-        // Ghép thông tin vào ô chọn vị trí (form tạo mới, chỉnh sửa)
-        let selectPosition = $("select#position.input-select");
-        for (const position of positions) {
+        // Ghép thông tin vào ô chọn Phòng ban
+        let filterDepartment = $("select#department.input-select");
+        for (const department of departments) {
           option = $("<option></option>");
-          option.attr("value", position.positionName);
-          option.attr("guid", position.positionID);
-          option.append(position.positionName);
-          selectPosition.append(option);
+          option.attr("value", department.departmentName);
+          option.append(department.departmentName);
+          filterDepartment.append(option);
         }
       },
     });
@@ -396,39 +311,143 @@ async function getAllPositions() {
     errorMessage("Có lỗi xảy ra", error);
   }
 }
-// Lây tất cả vị trí
-async function getAllDepartments() {
+// Lấy tất cả phòng ban
+async function getAllPositions() {
   try {
-    $.ajax({
+    await $.ajax({
       type: "GET",
-      // async: false,
-      url: dir + "api/v1/Departments/",
-      success: function (departments) {
-        console.log("Loading departments data ...");
-        allDepartments = departments;
-        // Lay thong tin vi tri
-        let filterPostion = $("select#department.select");
+      async: false,
+      url: dir + "api/v1/Positions/",
+      success: function (positions) {
+        console.log("Loading positions data ...");
+        allPositions = positions;
+        // Ghép thông tin vào ô lọc Chức vụ
+        let selectPosition = $("select#position.select");
         let option = null;
-        // Ghép thông tin vào ô lọc vị trí
-        for (const department of departments) {
+        for (const position of positions) {
           option = $("<option></option>");
-          option.attr("value", department.departmentID);
-          option.append(department.departmentName);
-          filterPostion.append(option);
+          option.attr("value", position.positionID);
+          option.append(position.positionName);
+          selectPosition.append(option);
         }
-        // Ghép thông tin vào ô chọn vị trí (form tạo mới, chỉnh sửa)
-        let selectdepartment = $("select#department.input-select");
-        for (const department of departments) {
+        // Ghép thông tin vào ô chọn Chức vụ
+        let filterPosition = $("select#position.input-select");
+        for (const position of positions) {
           option = $("<option></option>");
-          option.attr("value", department.departmentName);
-          option.attr("guid", department.departmentID);
-          option.append(department.departmentName);
-          selectdepartment.append(option);
+          option.attr("value", position.positionName);
+          option.append(position.positionName);
+          filterPosition.append(option);
         }
       },
     });
   } catch (error) {
     errorMessage("Có lỗi xảy ra", error);
+  }
+}
+// Lọc dữ liệu
+async function filterData() {
+  let queryParams = "";
+  const keyword = $(".icon-search").val();
+  const departmentID = $("select#department.select").val();
+  const positionID = $("select#position.select").val();
+  const pageSize = $("#pageSize").val();
+  const pageNumber = $("button.footer-button.page-number--selected").val();
+  queryParams +=
+    "keyword=" +
+    keyword +
+    "&departmentID=" +
+    departmentID +
+    "&positionID=" +
+    positionID +
+    "&pageSize=" +
+    pageSize +
+    "&pageNumber=" +
+    pageNumber;
+  try {
+    await $.ajax({
+      type: "GET",
+      async: false,
+      url: dir + "api/v1/Employees/filter?" + queryParams,
+      success: function (employees) {
+        console.log("Filtering Data ...");
+        // Tính số lượng bản ghi
+        const totalCount = employees.totalCount;
+        const value = pageSize < totalCount ? pageSize : totalCount;
+        // Tính chỉ số bắt đầu và chỉ số kết thúc
+        let lastIndex = value * pageNumber;
+        let firstIndex = lastIndex - pageSize + 1;
+        // Hiển thị số liệu left-footer
+        let selector = $(".footer-left b");
+        selector.empty();
+        lastIndex = Math.min(lastIndex, totalCount);
+        if (firstIndex > totalCount) {
+          lastIndex = 0;
+          firstIndex = 0;
+        }
+        selector.append(firstIndex + " - " + lastIndex + " / " + totalCount);
+        // Làm sạch table
+        $(".table-info").empty();
+        // Xu ly du lieu
+        let cols = $(".table-header div");
+        for (const employee of employees.data) {
+          let rowOfTable = $('<div class="row"></div>');
+          for (const col of cols) {
+            // Lay ra propValue tương ứng với các cột:
+            const propValue = $(col).attr("propValue");
+            // Lay ra format tương ứng với các cột
+            const format = $(col).attr("format");
+            // Lay thong tin
+            let value = employee[propValue];
+            // Dinh dang (Ngay sinh, Gioi tinh, Muc luong co ban)
+            if (value) {
+              switch (format) {
+                // Chuyen doi tu so ve chuoi cho gender va workStatus
+                case "gender": {
+                  value = value.toString();
+                  const options = $("#gender option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "workStatus": {
+                  value = value.toString();
+                  const options = $("#workStatus option");
+                  for (const opt of options) {
+                    const optValue = $(opt).attr("value");
+                    if (optValue == value) {
+                      value = $(opt).attr("label");
+                      break;
+                    }
+                  }
+                  break;
+                }
+                case "date":
+                  value = formatDate(value);
+                  break;
+                case "money":
+                  value = Math.round(value);
+                  value = formatMoney(value);
+                  break;
+                default:
+                  break;
+              }
+            }
+            // Tạo rowHTML:
+            const thHTML = `<div class='${propValue}'>${value || ""}</div>`;
+            rowOfTable.append(thHTML);
+          }
+          $(rowOfTable).data("entity", employee); // init data() of row
+          $(".table-info").append(rowOfTable);
+        }
+      },
+    });
+  } catch (error) {
+    console.log("filterData\n", error);
   }
 }
 // Luu nhan vien vao database
@@ -437,11 +456,8 @@ function saveData() {
   let employee = null;
   if (act == "create")
     employee = {
-      positionID: $("select#position.input-select option")[0].attributes["guid"]
-        .value,
-      departmentID: $("select#department.input-select option")[0].attributes[
-        "guid"
-      ].value,
+      positionID: $("select#position.input-select option")[0].value,
+      departmentID: $("select#department.input-select option")[0].value,
     };
   else employee = employeeSelected;
 
@@ -452,7 +468,10 @@ function saveData() {
     const propValue = $(input).attr("propValue");
     employee[propValue] = val ? val : "";
   }
-
+  // Gán ID của phòng ban và chức vụ
+  employee.positionID = getPositionID(employee.positionName);
+  employee.departmentID = getDepartmentID(employee.departmentName);
+  // Các trường còn lại
   employee["createdBy"] = "";
   employee["modifiedBy"] = "";
   if (employee.dateOfBirth == "") delete employee.dateOfBirth;
@@ -481,7 +500,7 @@ function saveData() {
     } catch (error) {
       errorMessage("Có lỗi xảy ra", error);
     }
-  } else {
+  } else if (act == "edit") {
     try {
       $.ajax({
         type: "PUT",
@@ -497,12 +516,24 @@ function saveData() {
     } catch (error) {
       errorMessage("Có lỗi xảy ra", error);
     }
+  } else if (act == "duplicate") {
+    $.ajax({
+      type: "POST",
+      url: dir + "api/v1/Employees/",
+      data: employee,
+      dataType: "json",
+      contentType: "application/json",
+      success: function (response) {
+        successMessage(`Nhân bản thành công`);
+        filterData();
+      },
+    });
   }
   $(this).parents(".pop-up__background").hide();
 }
 // Tính năng Nhân bản
 function duplicateData() {
-  act = "create";
+  act = "duplicate";
   if (!employeeSelected) return;
   // Hien thi pop-up
   $("#newEmployee").show();
@@ -657,4 +688,37 @@ function checkEmailFormat(email) {
   const re =
     /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
   return email.match(re);
+}
+
+// Lấy tên Phòng ban
+function getDepartmentName(id) {
+  for (const department of allDepartments) {
+    if (department.departmentID == id) return department.departmentName;
+  }
+  console.log("Không tìm thấy DepartmentID");
+}
+
+// Lấy tên Chức vụ
+function getPositionName(id) {
+  for (const position of allPositions) {
+    if (position.positionID == id) return position.positionName;
+  }
+  console.log("Không tìm thấy PositionID");
+}
+
+// Lấy ID Phòng ban
+function getDepartmentID(departmentName) {
+  for (const department of allDepartments) {
+    if (department.departmentName == departmentName)
+      return department.departmentID;
+  }
+  console.log("Không tìm thấy DepartmentName");
+}
+
+// Lấy tên Chức vụ
+function getPositionID(positionName) {
+  for (const position of allPositions) {
+    if (position.positionName == positionName) return position.positionID;
+  }
+  console.log("Không tìm thấy PositionName");
 }
