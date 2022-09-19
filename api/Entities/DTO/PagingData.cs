@@ -1,20 +1,17 @@
 ﻿namespace MISA.HUST._21H._2022.API.Entities.DTO
 {
     /// <summary>
-    /// Du lieu tra ve tu API filter
+    /// Dữ liệu trả về từ filter
     /// </summary>
-    public class PagingData<Employee>
+    public class PagingData
     {
         /// <summary>
-        /// Danh sach nhan vien
+        /// Danh sách nhân viên
         /// </summary>
-        public List<Employee> Employees { get; set; }
-
+        public List<Employee> Data { get; set; }
         /// <summary>
-        /// Tong so nhan vien tim thay
+        /// Tổng số bản ghi thỏa mãn điều kiện
         /// </summary>
-        public long TotalCount { get; set; }
-
-
+        public int TotalCount { get; set; }
     }
 }

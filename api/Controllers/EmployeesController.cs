@@ -94,73 +94,85 @@ namespace MISA.HUST._21H._2022.API.Controllers
         [HttpGet]
         [Route("filter")]
         public IActionResult FilterEmployees(
-            [FromQuery] string? keyWord,
-            [FromQuery] Guid? positionID,
-            [FromQuery] Guid? departmentID,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] int pageNumber = 1)
+        [FromQuery] string? keyword,
+        [FromQuery] Guid? positionID,
+        [FromQuery] Guid? departmentID,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] int pageNumber = 1)
         {
             try
             {
-                // Khoi tao ket noi dbForge
+                // Khởi tạo kết nối tới DB MySQL
                 var mySqlConnection = new MySqlConnection(server);
 
-                // Chuan bi cau lenh insert into (lay tu dbforge)
+                // Chuẩn bị tên Stored procedure
                 string procedureName = "Proc_employee_getPaging";
 
-                // Chuan bi tham so dau vao
+                // Chuẩn bị tham số đầu vào cho stored procedure
                 var parameters = new DynamicParameters();
-                parameters.Add("@t_Offset", (pageNumber - 1) * pageSize);
-                parameters.Add("@t_Limit", pageSize);
-                parameters.Add("@t_Sort", "");
+                parameters.Add("@v_Offset", (pageNumber - 1) * pageSize);
+                parameters.Add("@v_Limit", pageSize);
+                parameters.Add("@v_Sort", "");
+
                 // Chuan bi tham so dau vao "where"
                 string whereClause = "";
                 var orConditions = new List<string>();
                 var andConditions = new List<string>();
 
-                if (keyWord != null)
+                if (keyword != null)
                 {
-                    orConditions.Add($"(EmployeeCode like '%{keyWord}%'");
-                    orConditions.Add($"FullName like '%{keyWord}%'");
-                    orConditions.Add($"PhoneNumber like '%{keyWord}%')");
-                    // Cap nhat whereClause
-                    whereClause = $"({string.Join(" or ", orConditions)})";
+                    orConditions.Add($"EmployeeCode LIKE '%{keyword}%'");
+                    orConditions.Add($"FullName LIKE '%{keyword}%'");
+                    orConditions.Add($"PhoneNumber LIKE '%{keyword}%'");
+                }
+                if (orConditions.Count > 0)
+                {
+                    whereClause = $"({string.Join(" OR ", orConditions)})";
                 }
 
                 if (positionID != null)
-                    andConditions.Add($"PositionID like '%{positionID}%'");
-
-
-                if (departmentID != null)
-                    andConditions.Add($"DepartmentID like '%{departmentID}%'");
-
-                // Cap nhat whereClause
-                if (andConditions.Count > 0)
-                    whereClause += " and " + $"({string.Join(" and ", andConditions)})";
-
-                // Cap nhat tham so @t_Where
-                parameters.Add("@t_Where", whereClause);
-
-                // Thuc hien goi vao database de chay cau lenh tren
-                var multipleResult = mySqlConnection.QueryMultiple(procedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
-
-                // Xu li ket qua tra ve tu database (GridReader)
-                if (multipleResult != null)
                 {
-                    var employees = multipleResult.Read<Employee>().ToList();
-                    // var totalCount = multipleResult.Read<long>().Single();
-                    return StatusCode(StatusCodes.Status200OK, new PagingData<Employee>()
-                    {
-                        Employees = employees,
-                        // TotalCount = totalCount
-                    });
+                    andConditions.Add($"PositionID LIKE '%{positionID}%'");
                 }
 
-                return StatusCode(StatusCodes.Status400BadRequest, "Something went wrong ...");
+                if (departmentID != null)
+                {
+                    andConditions.Add($"DepartmentID LIKE '%{departmentID}%'");
+                }
+
+                if (andConditions.Count > 0)
+                {
+                    if (keyword != null)
+                        whereClause += $" AND {string.Join(" AND ", andConditions)}";
+                    else
+                        whereClause += $"{string.Join(" AND ", andConditions)}";
+                }
+
+                parameters.Add("@v_Where", whereClause);
+
+                // Thực hiện gọi vào DB để chạy stored procedure với tham số đầu vào ở trên
+                var multipleResults = mySqlConnection.QueryMultiple(procedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+
+                // Xử lý kết quả trả về từ DB (GridReader)
+                if (multipleResults != null)
+                {
+                    List<Employee> employees = multipleResults.Read<Employee>().ToList();
+                    int totalCount = multipleResults.Read<int>().First();
+                    return StatusCode(StatusCodes.Status200OK, new PagingData()
+                    {
+                        Data = employees,
+                        TotalCount = totalCount
+                    });
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "Something went wrong ...");
+                }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, ex.Message);
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, exception.Message);
             }
         }
 
