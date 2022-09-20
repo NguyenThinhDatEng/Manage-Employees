@@ -7,6 +7,7 @@ $(document).ready(function () {
 
 var act = null;
 var employeeSelected = null;
+var newEmployeeCode = null;
 var dir = "http://localhost:9074/";
 var allDepartments = null;
 var allPositions = null;
@@ -64,11 +65,11 @@ function initEvent() {
     $("#newEmployee").show();
 
     // Lam sach cac o inputs
-    const inputs = $("#newEmployee select, #newEmployee input");
-    for (const input of inputs) {
-      input.value = "";
-    }
+    $("#newEmployee select, #newEmployee input").val("");
 
+    // Lấy mã nhân viên mới
+    getEmployeeCode();
+    $("#newEmployee input")[0].value = newEmployeeCode;
     // Focus vào ô nhập liệu Mã nhân viên
     $("#newEmployee input")[0].focus();
 
@@ -333,6 +334,22 @@ async function getAllPositions() {
           option.append(position.positionName);
           filterPosition.append(option);
         }
+      },
+    });
+  } catch (error) {
+    errorMessage("Có lỗi xảy ra", error);
+  }
+}
+// Lấy mã nhân viên mới
+function getEmployeeCode() {
+  try {
+    $.ajax({
+      type: "GET",
+      async: false,
+      url: dir + "api/v1/Employees/newEmployeeCode",
+      success: function (employeeCode) {
+        newEmployeeCode = employeeCode;
+        console.log("Lấy mã thành công!", employeeCode);
       },
     });
   } catch (error) {
