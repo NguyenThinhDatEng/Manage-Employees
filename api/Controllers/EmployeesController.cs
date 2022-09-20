@@ -1,136 +1,183 @@
-﻿
-using Dapper;
+﻿using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualBasic;
 using MISA.HUST._21H._2022.API.Entities;
 using MISA.HUST._21H._2022.API.Entities.DTO;
 using MySqlConnector;
-using System.Xml.Schema;
+using System.Reflection.Metadata;
 
 namespace MISA.HUST._21H._2022.API.Controllers
 {
-    [Route("api/v1/[controller]")] // parent route
-    [ApiController]
+    [Route("api/v1/[controller]")]
+    [ApiController] 
     public class EmployeesController : ControllerBase
     {
-        public string server = "Server=localhost;Port=3306;Database=hust.21h.2022.nvthinh;Uid=root;Pwd=12345678;";
-
         /// <summary>
-        /// API lay thong tin cua tat ca nhan vien
+        /// API lấy danh sách tất cả nhân viên
         /// </summary>
-        /// <returns>Thong tin cua tat ca nhan vien</returns>
-        /// Author: Nguyen Van Thinh
+        /// <returns> Danh sách tất cả nhân viên </returns>
         [HttpGet]
-        [Route("")]
         public IActionResult GetAllEmployees()
         {
             try
             {
-                // Khoi tao ket noi dbForge
-                var mySqlConnection = new MySqlConnection(server);
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
 
-                // Chuan bi cau lenh insert into (lay tu dbforge)
-                string sqlCommand = "SELECT * FROM employee;";
+                // Chuẩn bị câu lệnh truy vấn
+                string getAllEmployeesCommand = "SELECT * FROM employee ORDER BY ModifiedDate DESC;";
 
-                // Thuc hien goi vao database de chay cau lenh tren
-                var employees = mySqlConnection.Query<Employee>(sqlCommand);
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                var employees = mySqlConnection.Query<Employee>(getAllEmployeesCommand);
 
+                // Xử lí dữ liệu trả về 
                 if (employees != null)
+                {
+                    // Trả về dữ liệu cho client
                     return StatusCode(StatusCodes.Status200OK, employees);
-                return StatusCode(StatusCodes.Status400BadRequest, "The information is empty");
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
+                }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, "Exception: " + ex.Message);
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
             }
         }
 
         /// <summary>
-        /// API lay thong tin chi tiet cua 1 nhan vien
+        /// API lấy thông tin nhân viên bằng ID
         /// </summary>
-        /// <returns>Thong tin cua 1 nhan vien</returns>
-        /// <param name="employeeID">ID nhan vien</param>
-        ///  Author: Nguyen Van Thinh
+        /// <param name="employeeID"> ID nhân viên </param>
+        /// <returns> Thông tin nhân viên </returns>
         [HttpGet]
-        [Route("{employeeID}")] // child route
-        public IActionResult GetEmployeeById([FromRoute] Guid employeeID)
-        {
-            try
-            {
-                // Khoi tao ket noi dbForge
-                var mySqlConnection = new MySqlConnection(server);
-
-                // Chuan bi cau lenh insert into (lay tu dbforge)
-                string sqlCommand = "SELECT * FROM employee e WHERE e.EmployeeID=@EmployeeID";
-
-                // Chuan bi tham so dau vao
-                var parameters = new DynamicParameters();
-                parameters.Add("@EmployeeID", employeeID);
-
-                // Thuc hien goi vao database de chay cau lenh tren
-                var employee = mySqlConnection.QueryFirst<Employee>(sqlCommand, parameters);
-
-                if (employee != null)
-                    return StatusCode(StatusCodes.Status200OK, employee);
-                return StatusCode(StatusCodes.Status400BadRequest, "This employee doesn't exist");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return StatusCode(StatusCodes.Status400BadRequest, "Exception: " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// API loc danh sach nhan vien
-        /// </summary>
-        /// <param name="keyWord"></param>
-        /// <param name="positionId"></param>
-        /// <param name="departmentId"></param>
-        /// <param name="limit"></param>
-        /// <param name="offset"></param>
-        /// <returns>Danh sach nha vien</returns>
-        /// <returns>So luong ban ghi</returns>
-        [HttpGet]
-        [Route("filter")]
-        public IActionResult FilterEmployees(
-        [FromQuery] string? keyword,
-        [FromQuery] Guid? positionID,
-        [FromQuery] Guid? departmentID,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] int pageNumber = 1)
+        [Route("{employeeID}")]
+        public IActionResult GetEmployeeByID([FromRoute] Guid employeeID)
         {
             try
             {
                 // Khởi tạo kết nối tới DB MySQL
-                var mySqlConnection = new MySqlConnection(server);
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
+
+                // Chuẩn bị câu lệnh truy vấn
+                string getEmployeeByIDCommand = "SELECT * FROM employee WHERE EmployeeID = @EmployeeID";
+
+                // Chuẩn bị tham số đầu vào cho câu lệnh truy vấn
+                var parameter = new DynamicParameters();
+                parameter.Add("@EmployeeID", employeeID);
+
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                var employee = mySqlConnection.QueryFirstOrDefault<Employee>(getEmployeeByIDCommand, parameter);
+
+                // Xử lí dữ liệu trả về 
+                if (employee != null)
+                {
+                    // Trả về dữ liệu cho client
+                    return StatusCode(StatusCodes.Status200OK, employee);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
+                }
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
+            }
+        }
+
+        /// <summary>
+        /// API lấy mã nhân viên mới
+        /// </summary>
+        /// <returns>Mã nhân viên mới</returns>
+        [HttpGet]
+        [Route("NewEmployeeCode")]
+        public IActionResult GetAutoIncrementEmployeeCode()
+        {
+            try
+            {
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
+
+                // Chuẩn bị câu lệnh truy vấn
+                string maxEmployeeCodeCommand = "SELECT MAX(EmployeeCode) FROM employee;";
+
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                var maxEmployeeCode = mySqlConnection.QueryFirstOrDefault<string>(maxEmployeeCodeCommand);
+
+                // Xử lý sinh mã nhân viên mới tự động tăng
+                // Cắt chuỗi mã nhân viên lớn nhất để lấy phần số
+                // Mã nhân viên mới = "NV" + Giá trị cắt chuỗi ở trên + 1
+                // "NV99997"
+                string newEmployeeCode = "NV" + (Int64.Parse(maxEmployeeCode.Substring(2)) + 1).ToString();
+
+                // Trả về dữ liệu cho client
+                return StatusCode(StatusCodes.Status200OK, newEmployeeCode);
+                
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
+            }
+        }
+
+        /// <summary>
+        /// API Lọc danh sách nhân viên có điều kiện tìm kiếm và phân trang
+        /// </summary>
+        /// <param name="keyword">Từ khóa muốn tìm kiếm (Mã nhân viên, tên nhân viên, số điện thoại)</param>
+        /// <param name="positionID">ID vị trí</param>
+        /// <param name="departmentID">ID phòng ban</param>
+        /// <param name="limit">Số bản ghi trong 1 trang</param>
+        /// <param name="offset">Vị trí bản ghi bắt đầu lấy dữ liệu</param>
+        /// <returns>Danh sách nhân viên</returns>
+        [HttpGet]
+        [Route("filter")]
+        public IActionResult FilterEmployees(
+            [FromQuery] string? keyword,
+            [FromQuery] Guid? positionID,
+            [FromQuery] Guid? departmentID,
+            [FromQuery] int limit,
+            [FromQuery] int offset) 
+        {
+            try
+            {
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
 
                 // Chuẩn bị tên Stored procedure
-                string procedureName = "Proc_employee_getPaging";
+                string storedProcedureName = "Proc_employee_GetPaging";
 
                 // Chuẩn bị tham số đầu vào cho stored procedure
                 var parameters = new DynamicParameters();
-                parameters.Add("@v_Offset", (pageNumber - 1) * pageSize);
-                parameters.Add("@v_Limit", pageSize);
-                parameters.Add("@v_Sort", "");
+                parameters.Add("@v_Offset", offset);
+                parameters.Add("@v_Limit", limit);
+                parameters.Add("@v_Sort", "ModifiedDate DESC");
 
-                // Chuan bi tham so dau vao "where"
-                string whereClause = "";
                 var orConditions = new List<string>();
                 var andConditions = new List<string>();
+                string whereClause = "";
 
                 if (keyword != null)
                 {
                     orConditions.Add($"EmployeeCode LIKE '%{keyword}%'");
-                    orConditions.Add($"FullName LIKE '%{keyword}%'");
+                    orConditions.Add($"EmployeeName LIKE '%{keyword}%'");
                     orConditions.Add($"PhoneNumber LIKE '%{keyword}%'");
                 }
-                if (orConditions.Count > 0)
+                if(orConditions.Count > 0)
                 {
-                    whereClause = $"({string.Join(" OR ", orConditions)})";
+                    whereClause = $"({string.Join(" OR ",orConditions)})";
                 }
 
-                if (positionID != null)
+                if(positionID != null)
                 {
                     andConditions.Add($"PositionID LIKE '%{positionID}%'");
                 }
@@ -140,9 +187,9 @@ namespace MISA.HUST._21H._2022.API.Controllers
                     andConditions.Add($"DepartmentID LIKE '%{departmentID}%'");
                 }
 
-                if (andConditions.Count > 0)
+                if(andConditions.Count > 0)
                 {
-                    if (keyword != null)
+                    if(keyword != null)
                         whereClause += $" AND {string.Join(" AND ", andConditions)}";
                     else
                         whereClause += $"{string.Join(" AND ", andConditions)}";
@@ -151,13 +198,13 @@ namespace MISA.HUST._21H._2022.API.Controllers
                 parameters.Add("@v_Where", whereClause);
 
                 // Thực hiện gọi vào DB để chạy stored procedure với tham số đầu vào ở trên
-                var multipleResults = mySqlConnection.QueryMultiple(procedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+                var multipleResults = mySqlConnection.QueryMultiple(storedProcedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
 
-                // Xử lý kết quả trả về từ DB (GridReader)
-                if (multipleResults != null)
+                // Xử lý kết quả trả về từ DB
+                if(multipleResults != null)
                 {
-                    List<Employee> employees = multipleResults.Read<Employee>().ToList();
-                    int totalCount = multipleResults.Read<int>().First();
+                    var employees = multipleResults.Read<Employee>().ToList();
+                    var totalCount = multipleResults.Read<int>().Single();
                     return StatusCode(StatusCodes.Status200OK, new PagingData()
                     {
                         Data = employees,
@@ -166,43 +213,60 @@ namespace MISA.HUST._21H._2022.API.Controllers
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, "Something went wrong ...");
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
                 }
             }
             catch (Exception exception)
             {
                 Console.WriteLine(exception.Message);
-                return StatusCode(StatusCodes.Status400BadRequest, exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
             }
         }
 
         /// <summary>
-        /// API them moi nhan vien
+        /// API thêm mới 1 nhân viên
         /// </summary>
-        /// <returns>Id cua nhan vien vua them moi</returns>
-        /// <param name="employee">Doi tuong nhan vien</param>
+        /// <param name="employee">Đối tượng nhân viên cần thêm mới</param>
+        /// <returns>ID của nhân viên vừa thêm mới</returns>
         [HttpPost]
         public IActionResult InsertEmployee([FromBody] Employee employee)
         {
             try
             {
-                // Khoi tao ket noi dbForge
-                var mySqlConnection = new MySqlConnection(server);
-                // Chuan bi cau lenh insert into (lay tu dbforge)
-                string sqlCommand = "INSERT INTO employee (EmployeeID, EmployeeCode, FullName, DateOfBirth, Gender, IdentityNumber, IdentityIssuedDate, IdentityIssuedPlace, Email, PhoneNumber, PositionID, PositionName, DepartmentID, DepartmentName, TaxCode, Salary, JoiningDate, WorkStatus, CreatedDate, CreatedBy, ModifiedDate, ModifiedBy)" +
-                    "  VALUES (@EmployeeID,@EmployeeCode,@FullName,@DateOfBirth,@Gender,@IdentityNumber,@IdentityIssuedDate,@IdentityIssuedPlace,@Email,@PhoneNumber,@PositionID,@PositionName,@DepartmentID,@DepartmentName,@TaxCode,@Salary,@JoiningDate,@WorkStatus,@CreatedDate,@CreatedBy,@ModifiedDate,@ModifiedBy);";
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
 
-                // Chuan bi tham so dau vao
-                var EmployeeID = Guid.NewGuid();
+                // Chuẩn bị câu lệnh INSERT INTO
+                string insertEmployeeCommand = "INSERT INTO employee (EmployeeID, EmployeeCode, EmployeeName, DateOfBirth, Gender, IdentityNumber, IdentityDate, IdentityPlace, Email, PhoneNumber, PositionID, PositionName, DepartmentID, DepartmentName, TaxCode, Salary, JoiningDate, WorkStatus, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate) " +
+                                                "VALUES (@EmployeeID, @EmployeeCode, @EmployeeName, @DateOfBirth, @Gender, @IdentityNumber, @IdentityDate, @IdentityPlace, @Email, @PhoneNumber, @PositionID, @PositionName, @DepartmentID, @DepartmentName, @TaxCode, @Salary, @JoiningDate, @WorkStatus, @CreatedBy, @CreatedDate, @ModifiedBy, @ModifiedDate);";
+                
+                // Chuẩn bị câu lệnh truy vấn tìm ID vị trí và ID phòng ban
+                string getPositionByNameCommand = "SELECT * FROM positions WHERE PositionName = @PositionName";
+                string getDepartmentByNameCommand = "SELECT * FROM department WHERE DepartmentName = @DepartmentName";
+
+                // Chuẩn bị tham số đầu vào cho câu lệnh truy vấn tìm ID vị trí và ID phòng ban
+                var parameter = new DynamicParameters();
+                parameter.Add("@PositionName", employee.PositionName);
+                parameter.Add("@DepartmentName", employee.DepartmentName);
+
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                var position = mySqlConnection.QueryFirstOrDefault<Position>(getPositionByNameCommand, parameter);
+                employee.PositionID = position.PositionID;
+                var department = mySqlConnection.QueryFirstOrDefault<Department>(getDepartmentByNameCommand, parameter);
+                employee.DepartmentID = department.DepartmentID;
+
+                // Chuẩn bị tham số đầu vào cho câu lệnh INSERT INTO
+                var employeeID = Guid.NewGuid();
                 var parameters = new DynamicParameters();
-                parameters.Add("@EmployeeID", EmployeeID);
+                parameters.Add("@EmployeeID", employeeID);
                 parameters.Add("@EmployeeCode", employee.EmployeeCode);
-                parameters.Add("@FullName", employee.FullName);
+                parameters.Add("@EmployeeName", employee.EmployeeName);
                 parameters.Add("@DateOfBirth", employee.DateOfBirth);
                 parameters.Add("@Gender", employee.Gender);
                 parameters.Add("@IdentityNumber", employee.IdentityNumber);
-                parameters.Add("@IdentityIssuedDate", employee.IdentityIssuedDate);
-                parameters.Add("@IdentityIssuedPlace", employee.IdentityIssuedPlace);
+                parameters.Add("@IdentityDate", employee.IdentityDate);
+                parameters.Add("@IdentityPlace", employee.IdentityPlace);
                 parameters.Add("@Email", employee.Email);
                 parameters.Add("@PhoneNumber", employee.PhoneNumber);
                 parameters.Add("@PositionID", employee.PositionID);
@@ -213,56 +277,87 @@ namespace MISA.HUST._21H._2022.API.Controllers
                 parameters.Add("@Salary", employee.Salary);
                 parameters.Add("@JoiningDate", employee.JoiningDate);
                 parameters.Add("@WorkStatus", employee.WorkStatus);
-                parameters.Add("@CreatedDate", DateTime.Now);
                 parameters.Add("@CreatedBy", employee.CreatedBy);
-                parameters.Add("@ModifiedDate", DateTime.Now);
+                parameters.Add("@CreatedDate", employee.CreatedDate);
                 parameters.Add("@ModifiedBy", employee.ModifiedBy);
+                parameters.Add("@ModifiedDate", employee.ModifiedDate);
 
-                // Thuc hien goi vao database de chay cau lenh tren
-                int noOfAffectedRows = mySqlConnection.Execute(sqlCommand, parameters);
+                // Thực hiện gọi vào DB để chạy câu lệnh INSERT INTO với tham số đầu vào ở trên
+                int numberOfAffectedRows = mySqlConnection.Execute(insertEmployeeCommand, parameters);
 
-                // Xu li ket qua tra ve tu database
-                if (noOfAffectedRows > 0)
+                // Xử lí dữ liệu trả về từ DB
+                if (numberOfAffectedRows > 0)
                 {
-                    return StatusCode(StatusCodes.Status201Created, EmployeeID);
+                    // Trả về dữ liệu cho client
+                    return StatusCode(StatusCodes.Status201Created, employeeID);
                 }
-                else return StatusCode(StatusCodes.Status400BadRequest, "Error Server");
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
+                }
             }
-            catch (Exception ex)
+            catch (MySqlException mySqlException)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, ex.Message);
+                if(mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e003");
+                }
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
             }
         }
 
         /// <summary>
-        /// API sua thong tin
+        /// API sửa 1 nhân viên
         /// </summary>
-        /// <param name="employee">Doi tuong nhan vien</param>
-        /// <param name="employeeID">Id cua nhan vien</param>
-        /// <returns>Id cua nhan vien vua sua doi</returns>
+        /// <param name="employee">Đối tượng nhân viên cần sửa</param>
+        /// <param name="employeeID">ID nhân viên cần sửa</param>
+        /// <returns>ID của nhân viên vừa sửa</returns>
         [HttpPut]
         [Route("{employeeID}")]
         public IActionResult UpdateEmployee([FromBody] Employee employee, [FromRoute] Guid employeeID)
         {
             try
             {
-                // Khoi tao ket noi dbForge
-                var mySqlConnection = new MySqlConnection(server);
-                // Chuan bi cau lenh insert into (lay tu dbforge)
-                string sqlCommand = "UPDATE employee e " +
-                    "SET EmployeeCode = @EmployeeCode, FullName = @FullName, DateOfBirth = @DateOfBirth, Gender = @Gender, IdentityNumber = @IdentityNumber, IdentityIssuedDate = @IdentityIssuedDate, IdentityIssuedPlace = @IdentityIssuedPlace, Email = @Email, PhoneNumber = @PhoneNumber, PositionID = @PositionID, PositionName = @PositionName, DepartmentID = @DepartmentID, DepartmentName = @DepartmentName, TaxCode = @TaxCode, Salary = @Salary, JoiningDate = @JoiningDate, WorkStatus = @WorkStatus, CreatedDate = @CreatedDate, CreatedBy = @CreatedBy, ModifiedDate = @ModifiedDate, ModifiedBy = @ModifiedBy " +
-                    "WHERE EmployeeID = @EmployeeID;";
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;Allow User Variables=True";
+                var mySqlConnection = new MySqlConnection(connectionString);
 
-                // Chuan bi tham so dau vao
+                // Chuẩn bị câu lệnh UPDATE
+                string updateEmployeeCommand = "UPDATE employee SET " +
+                                               "EmployeeCode = @EmployeeCode, EmployeeName = @EmployeeName, DateOfBirth = @DateOfBirth, Gender = @Gender, IdentityNumber = @IdentityNumber, IdentityDate = @IdentityDate, IdentityPlace = @IdentityPlace, Email = @Email, PhoneNumber = @PhoneNumber, PositionID = @PositionID, PositionName = @PositionName, DepartmentID = @DepartmentID, DepartmentName = @DepartmentName, TaxCode = @TaxCode, Salary = @Salary, JoiningDate = @JoiningDate, WorkStatus = @WorkStatus, CreatedBy = @CreatedBy, CreatedDate = @CreatedDate, ModifiedBy = @ModifiedBy, ModifiedDate = @ModifiedDate" +
+                                               " WHERE EmployeeID = @EmployeeID;";
+
+                // Chuẩn bị câu lệnh truy vấn tìm ID vị trí và ID phòng ban
+                string getPositionByNameCommand = "SELECT * FROM positions WHERE PositionName = @PositionName";
+                string getDepartmentByNameCommand = "SELECT * FROM department WHERE DepartmentName = @DepartmentName";
+
+                // Chuẩn bị tham số đầu vào cho câu lệnh truy vấn tìm ID vị trí và ID phòng ban
+                var parameter = new DynamicParameters();
+                parameter.Add("@PositionName", employee.PositionName);
+                parameter.Add("@DepartmentName", employee.DepartmentName);
+
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                var position = mySqlConnection.QueryFirstOrDefault<Position>(getPositionByNameCommand, parameter);
+                employee.PositionID = position.PositionID;
+                var department = mySqlConnection.QueryFirstOrDefault<Department>(getDepartmentByNameCommand, parameter);
+                employee.DepartmentID = department.DepartmentID;
+
+                // Chuẩn bị tham số đầu vào cho câu lệnh UPDATE
+
                 var parameters = new DynamicParameters();
                 parameters.Add("@EmployeeID", employeeID);
                 parameters.Add("@EmployeeCode", employee.EmployeeCode);
-                parameters.Add("@FullName", employee.FullName);
+                parameters.Add("@EmployeeName", employee.EmployeeName);
                 parameters.Add("@DateOfBirth", employee.DateOfBirth);
                 parameters.Add("@Gender", employee.Gender);
                 parameters.Add("@IdentityNumber", employee.IdentityNumber);
-                parameters.Add("@IdentityIssuedDate", employee.IdentityIssuedDate);
-                parameters.Add("@IdentityIssuedPlace", employee.IdentityIssuedPlace);
+                parameters.Add("@IdentityDate", employee.IdentityDate);
+                parameters.Add("@IdentityPlace", employee.IdentityPlace);
                 parameters.Add("@Email", employee.Email);
                 parameters.Add("@PhoneNumber", employee.PhoneNumber);
                 parameters.Add("@PositionID", employee.PositionID);
@@ -273,59 +368,80 @@ namespace MISA.HUST._21H._2022.API.Controllers
                 parameters.Add("@Salary", employee.Salary);
                 parameters.Add("@JoiningDate", employee.JoiningDate);
                 parameters.Add("@WorkStatus", employee.WorkStatus);
-                parameters.Add("@CreatedDate", employee.CreatedDate);
                 parameters.Add("@CreatedBy", employee.CreatedBy);
-                parameters.Add("@ModifiedDate", employee.ModifiedDate);
+                parameters.Add("@CreatedDate", employee.CreatedDate);
                 parameters.Add("@ModifiedBy", employee.ModifiedBy);
+                parameters.Add("@ModifiedDate", employee.ModifiedDate);
 
-                // Thuc hien goi vao database de chay cau lenh tren
-                int noOfAffectedRows = mySqlConnection.Execute(sqlCommand, parameters);
+                // Thực hiện gọi vào DB để chạy câu lệnh với tham số đầu vào ở trên
+                int numberOfAffectedRows = mySqlConnection.Execute(updateEmployeeCommand, parameters);
 
-                // Xu li ket qua tra ve tu database
-                if (noOfAffectedRows > 0)
+                // Xử lí dữ liệu trả về từ DB
+                if (numberOfAffectedRows > 0)
                 {
-                    return StatusCode(StatusCodes.Status201Created, employeeID);
+                    // Trả về dữ liệu cho client
+                    return StatusCode(StatusCodes.Status200OK, employeeID);
                 }
-                else return StatusCode(StatusCodes.Status400BadRequest, "This employee doesn't exist");
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
+                }
             }
-            catch (Exception ex)
+            catch (MySqlException mySqlException)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, ex.Message);
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e003");
+                }
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
             }
         }
 
         /// <summary>
-        /// API xoa 1 nhan vien
+        /// API xóa 1 nhân viên
         /// </summary>
-        /// <param name="employeeID">Id cua nhan vien</param>
-        /// <returns>Id cua nhan vien vua xoa</returns>
+        /// <param name="employeeID">ID nhân viên cần xóa</param>
+        /// <returns>ID của nhân viên vừa xóa</returns>
         [HttpDelete]
         [Route("{employeeID}")]
         public IActionResult DeleteEmployee([FromRoute] Guid employeeID)
         {
             try
             {
-                // Khoi tao ket noi dbForge
-                var mySqlConnection = new MySqlConnection(server);
+                // Khởi tạo kết nối tới DB MySQL
+                string connectionString = "Server=3.0.89.182;Port=3306;Database=DAOTAO.AI.2022.TTCUONG;Uid=dev;Pwd=12345678;";
+                var mySqlConnection = new MySqlConnection(connectionString);
 
-                // Chuan bi cau lenh insert into (lay tu dbforge)
-                string sqlCommand = "DELETE FROM employee WHERE EmployeeID=@EmployeeID;";
+                // Chuẩn bị câu lệnh truy vấn
+                string deleteEmployeeCommand = "DELETE FROM employee WHERE EmployeeID=" + "'" + employeeID.ToString() + "';";
 
-                // Chuan bi tham so dau vao
-                var parameters = new DynamicParameters();
-                parameters.Add("@EmployeeID", employeeID);
+                // Chuẩn bị tham số đầu vào cho câu lệnh truy vấn
+                var parameter = new DynamicParameters();
+                parameter.Add("@EmployeeID", employeeID);
 
-                // Thuc hien goi vao database de chay cau lenh tren
-                var noOfAffectedRows = mySqlConnection.Execute(sqlCommand, parameters);
+                // Thực hiện gọi vào DB để chạy câu lệnh truy vấn ở trên
+                int numberOfAffectedRows = mySqlConnection.Execute(deleteEmployeeCommand, parameter);
 
-                if (noOfAffectedRows > 0)
+                // Xử lí dữ liệu trả về 
+                if (numberOfAffectedRows > 0)
+                {
+                    // Trả về dữ liệu cho client
                     return StatusCode(StatusCodes.Status200OK, employeeID);
-                return StatusCode(StatusCodes.Status400BadRequest, "This employee doesn't exist");
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "e002");
+                }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Console.WriteLine(ex.Message);
-                return StatusCode(StatusCodes.Status400BadRequest, "Exception: " + ex.Message);
+                Console.WriteLine(exception.Message);
+                return StatusCode(StatusCodes.Status400BadRequest, "e001");
             }
         }
     }
